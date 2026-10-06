@@ -1,0 +1,67 @@
+```text
+# WAN interface
+set interfaces ethernet eth0 address 'dhcp'
+set interfaces ethernet eth0 offload gro
+set interfaces ethernet eth0 offload gso
+set interfaces ethernet eth0 offload sg
+set interfaces ethernet eth0 offload tso
+
+# LAN interface
+set interfaces ethernet eth1 address '<LAN_GATEWAY_IP>/<PREFIX>'
+set interfaces ethernet eth1 offload gro
+set interfaces ethernet eth1 offload gso
+set interfaces ethernet eth1 offload sg
+set interfaces ethernet eth1 offload tso
+
+set interfaces loopback lo
+
+# Source NAT / Internet access
+set nat source rule 10 outbound-interface name 'eth0'
+set nat source rule 10 source address '<LAN_NETWORK>/<PREFIX>'
+set nat source rule 10 translation address 'masquerade'
+
+# Default route
+set protocols static route 0.0.0.0/0 next-hop '<UPSTREAM_GATEWAY_IP>'
+
+# Route to the monitored/internal network
+set protocols static route <MONITORED_NETWORK>/<PREFIX> next-hop '<DEBIAN_MONITOR_IP>'
+
+# DNS forwarding
+set service dns forwarding allow-from '<LAN_NETWORK>/<PREFIX>'
+set service dns forwarding listen-address '<LAN_GATEWAY_IP>'
+set service dns forwarding name-server 8.8.8.8
+
+# NTP
+set service ntp allow-client address '127.0.0.0/8'
+set service ntp allow-client address '169.254.0.0/16'
+set service ntp allow-client address '10.0.0.0/8'
+set service ntp allow-client address '172.16.0.0/12'
+set service ntp allow-client address '192.168.0.0/16'
+set service ntp allow-client address '::1/128'
+set service ntp allow-client address 'fe80::/10'
+set service ntp allow-client address 'fc00::/7'
+
+set service ntp server time1.vyos.net
+set service ntp server time2.vyos.net
+set service ntp server time3.vyos.net
+
+# SSH
+set service ssh
+
+# System
+set system config-management commit-revisions '100'
+set system console device ttyS0 kernel
+set system console device ttyS0 speed '115200'
+set system host-name 'vyos'
+
+# Replace with your own credentials when deploying
+set system login user <USERNAME> authentication plaintext-password '<PASSWORD>'
+
+set system name-server '8.8.8.8'
+set system name-server '1.1.1.1'
+set system option reboot-on-upgrade-failure '5'
+
+# Logging
+set system syslog local facility all level 'info'
+set system syslog local facility local7 level 'debug'
+```
