@@ -1,0 +1,44 @@
+filebeat.inputs:
+  - type: filestream
+    id: suricata-eve
+    paths:
+      - /var/log/suricata/eve.json
+    parsers:
+      - ndjson:
+          overwrite_keys: true
+          add_error_key: true
+          expand_keys: true
+    fields:
+      log_source: suricata
+      agent_host: debian1-ips
+    fields_under_root: true
+
+  - type: filestream
+    id: mitm-log
+    paths:
+      - /var/log/mitm/mitm.log
+    parsers:
+      - ndjson:
+          overwrite_keys: true
+          add_error_key: true
+          expand_keys: true
+    fields:
+      log_source: mitmproxy
+      agent_host: debian1-ips
+    fields_under_root: true
+
+output.elasticsearch:
+  # Point this to Security Onion (temporarily) or Debian 2's IP
+  hosts: ["http://192.168.101.200:9200"]
+
+  indices:
+    - index: "filebeat-suricata-%{+yyyy.MM.dd}"
+      when.equals:
+        log_source: "suricata"
+
+    - index: "filebeat-mitm-%{+yyyy.MM.dd}"
+      when.equals:
+        log_source: "mitmproxy"
+
+processors:
+  - add_host_metadata: {}
