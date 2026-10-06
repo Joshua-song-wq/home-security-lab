@@ -1,0 +1,10 @@
+/home/student/soc/mitm/logs/mitm.log {
+    daily
+    rotate 7
+    size 100M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
