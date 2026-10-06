@@ -1,0 +1,49 @@
+services:
+  mitmproxy:
+    image: mitmproxy/mitmproxy:latest
+    container_name: mitmproxy
+    network_mode: host
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mitm/scripts:/scripts
+      - ./mitm/logs:/logs
+      - ./mitm/ca:/home/mitmproxy/.mitmproxy
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: >
+      mitmdump
+      --mode transparent
+      --listen-host 0.0.0.0
+      --listen-port 8080
+      -s /scripts/mitm_logger.py
+    restart: unless-stopped
+
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: suricata
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_NICE
+    volumes:
+      - ./suricata/logs:/var/log/suricata
+      - ./suricata/rules:/var/lib/suricata/rules
+      - ./suricata/etc:/etc/suricata
+    # When you enable NFQUEUE in nftables, switch -i ens33 to -q 0 for IPS mode
+    command: -q 0
+    restart: unless-stopped
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./suricata/logs:/var/log/suricata:ro
+      - ./mitm/logs:/var/log/mitm:ro
+    command: ["--strict.perms=false"]
+    restart: unless-stopped
