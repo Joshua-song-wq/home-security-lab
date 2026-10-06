@@ -1,0 +1,340 @@
+%YAML 1.1
+---
+
+suricata-version: "8.0"
+
+#############################################
+# NETWORK VARIABLES
+#############################################
+
+vars:
+  address-groups:
+    HOME_NET: "[192.168.101.0/24]"
+    EXTERNAL_NET: "!$HOME_NET"
+
+    HTTP_SERVERS: "$HOME_NET"
+    SMTP_SERVERS: "$HOME_NET"
+    SQL_SERVERS: "$HOME_NET"
+    DNS_SERVERS: "$HOME_NET"
+    TELNET_SERVERS: "$HOME_NET"
+    AIM_SERVERS: "$EXTERNAL_NET"
+    DC_SERVERS: "$HOME_NET"
+    DNP3_SERVER: "$HOME_NET"
+    DNP3_CLIENT: "$HOME_NET"
+    MODBUS_CLIENT: "$HOME_NET"
+    MODBUS_SERVER: "$HOME_NET"
+    ENIP_CLIENT: "$HOME_NET"
+    ENIP_SERVER: "$HOME_NET"
+
+  port-groups:
+    HTTP_PORTS: "80"
+    SHELLCODE_PORTS: "!80"
+    SSH_PORTS: "22"
+    FTP_PORTS: "21"
+    DNS_PORTS: "53"
+    SMTP_PORTS: "25"
+    FILE_DATA_PORTS: "[$HTTP_PORTS,110,143]"
+
+#############################################
+# LOGGING
+#############################################
+
+default-log-dir: /var/log/suricata/
+
+stats:
+  enabled: yes
+  interval: 8
+
+logging:
+  default-log-level: notice
+
+  outputs:
+    - console:
+        enabled: yes
+
+    - file:
+        enabled: yes
+        level: info
+        filename: suricata.log
+
+    - syslog:
+        enabled: no
+        facility: local5
+        format: "[%i] <%d> -- "
+
+#############################################
+# ALERT LOG
+#############################################
+
+outputs:
+
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+
+#############################################
+# EVE JSON LOG
+#############################################
+
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      community-id: yes
+
+      types:
+
+        - alert:
+            tagged-packets: yes
+
+        - anomaly:
+            enabled: yes
+
+        - http
+
+        - dns
+
+        - tls
+
+        - files
+
+        - smtp
+
+        - ftp
+
+        - ssh
+
+        - rdp
+
+        - smb
+
+        - dcerpc
+
+        - krb5
+
+        - snmp
+
+        - sip
+
+        - ldap
+
+        - mqtt
+
+        - http2
+
+        - doh2
+
+        - quic
+
+        - arp
+
+        - dhcp
+
+        - stats
+
+        - flow
+#############################################
+# ADDITIONAL OUTPUTS
+#############################################
+
+#############################################
+# UNIX COMMAND SOCKET
+#############################################
+
+unix-command:
+  enabled: yes
+  filename: /var/run/suricata/suricata-command.socket
+
+#############################################
+# RULES
+#############################################
+
+default-rule-path: /var/lib/suricata/rules
+
+rule-files:
+  - suricata.rules
+  - local.rules
+
+classification-file: /etc/suricata/classification.config
+reference-config-file: /etc/suricata/reference.config
+
+#############################################
+# NFQUEUE / IPS
+#############################################
+
+nfq:
+  mode: accept
+  fail-open: no
+
+  repeat-mark: 1
+  repeat-mask: 1
+
+  bypass-mark: 1
+  bypass-mask: 1
+
+  route-queue: 2
+
+#############################################
+# DETECTION
+#############################################
+
+detect:
+  profile: medium
+
+  prefilter:
+    default: mpm
+
+  sgh-mpm-caching: yes
+
+  custom-values:
+    toclient-groups: 3
+    toserver-groups: 25
+
+  detect-thread-ratio: 1.0
+
+#############################################
+# STREAM / FLOW
+#############################################
+
+flow:
+  memcap: 128 MiB
+  hash-size: 65536
+  prealloc: 10000
+  emergency-recovery: 30
+
+stream:
+  memcap: 64 MiB
+
+  reassembly:
+    memcap: 256 MiB
+
+    toserver-chunk-size: 2560
+    toclient-chunk-size: 2560
+
+    randomize-chunk-size: yes
+
+#############################################
+# DEFRAGMENTATION
+#############################################
+
+defrag:
+  memcap: 32 MiB
+  hash-size: 65536
+  prealloc: yes
+  timeout: 60
+
+#############################################
+# VLAN
+#############################################
+
+vlan:
+  use-for-tracking: true
+
+#############################################
+# APPLICATION PROTOCOLS
+#############################################
+
+app-layer:
+
+  protocols:
+
+    http:
+      enabled: yes
+
+    http2:
+      enabled: yes
+
+    tls:
+      enabled: yes
+      detection-ports:
+        dp: 443
+
+    dns:
+      tcp:
+        enabled: yes
+        detection-ports:
+          dp: 53
+
+      udp:
+        enabled: yes
+        detection-ports:
+          dp: 53
+
+    ssh:
+      enabled: yes
+
+    ftp:
+      enabled: yes
+
+    smtp:
+      enabled: yes
+
+    smb:
+      enabled: yes
+      detection-ports:
+        dp: 139,445
+
+    rdp:
+      enabled: yes
+
+    ldap:
+      tcp:
+        enabled: yes
+        detection-ports:
+          dp: 389,3268
+
+      udp:
+        enabled: yes
+        detection-ports:
+          dp: 389,3268
+
+    krb5:
+      enabled: yes
+
+    mqtt:
+      enabled: yes
+
+    snmp:
+      enabled: yes
+
+    quic:
+      enabled: yes
+
+    dhcp:
+      enabled: yes
+
+    arp:
+      enabled: yes
+
+#############################################
+# ENGINE
+#############################################
+
+action-order:
+  - pass
+  - drop
+  - reject
+  - alert
+
+exception-policy: auto
+
+#############################################
+# HOST POLICY
+#############################################
+
+host-mode: auto
+
+#############################################
+# SECURITY
+#############################################
+
+security:
+  limit-noproc: true
+
+#############################################
+# LEGACY
+#############################################
+
+legacy:
+  uricontent: enabled
