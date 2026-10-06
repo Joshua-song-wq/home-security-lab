@@ -1,2 +1,2 @@
 # home-security-lab
-home security lab settings with vyos, debian, securityonion
+home security lab settings with vyos, debian
